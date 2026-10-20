@@ -1,7 +1,4 @@
-project_id = "frjysdjlskcuuxwgdrjy"
-
-[functions.admin-instant-login]
-verify_jwt = false
+project_id = "expert-self-hosted"
 
 [functions.instant-login]
 verify_jwt = false

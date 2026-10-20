@@ -1,73 +1,47 @@
-# Welcome to your Lovable project
+# Expert eGestor Academy
 
-## Project info
+Plataforma de treinamento de funcionários do eGestor: React + Vite + Tailwind/shadcn no frontend,
+Supabase **self-hosted** no backend (Postgres, Auth, Storage e Edge Functions).
 
-**URL**: https://lovable.dev/projects/44e5de2e-e035-4056-ba5f-faba96e02d71
+## Onde roda
 
-## How can I edit this code?
+| Parte | Local | Endereço |
+|-------|-------|----------|
+| Site (build estático) | `mateus@10.1.1.17:/var/www/expert` | https://expert.egestor.com.br |
+| Banco / API (Docker) | `root@76.13.174.32:/opt/expert-db` | https://srv1988116.hstgr.cloud/expert-api |
 
-There are several ways of editing your application.
+O `.env` aponta o frontend para a API. A chave dele é a `ANON_KEY` pública; a `SERVICE_ROLE_KEY`
+fica só no `/opt/expert-db/.env` da VPS e nunca deve ir para o repositório.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/44e5de2e-e035-4056-ba5f-faba96e02d71) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Desenvolvimento
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm ci
+npm run dev        # http://localhost:8080 (usa o banco de produção do .env)
 ```
 
-**Edit a file directly in GitHub**
+## Publicar o site
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+npm run build
+rsync -rltz --delete --exclude='.well-known' dist/ mateus@10.1.1.17:/var/www/expert/
+```
 
-**Use GitHub Codespaces**
+## Edge Functions
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Ficam em `supabase/functions/`. Para publicar uma alteração:
 
-## What technologies are used for this project?
+```sh
+scp -r supabase/functions/<nome> root@76.13.174.32:/opt/expert-db/volumes/functions/
+ssh root@76.13.174.32 'cd /opt/expert-db && docker compose restart functions'
+```
 
-This project is built with:
+## Banco de dados
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/44e5de2e-e035-4056-ba5f-faba96e02d71) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Serviços: `cd /opt/expert-db && docker compose ps` (ajustes locais em `docker-compose.expert.yml`).
+- Painel (Studio): `ssh -L 8000:127.0.0.1:8000 root@76.13.174.32` e abrir http://localhost:8000
+  (usuário/senha em `DASHBOARD_USERNAME`/`DASHBOARD_PASSWORD` no `.env` da VPS).
+- Backup diário às 03:30 em `/opt/expert-db/backup/daily` (banco + arquivos do storage, 14 dias),
+  feito por `/opt/expert-db/backup.sh`.
+- Restaurar um backup:
+  `docker exec -i supabase-db pg_restore -U supabase_admin -d postgres --clean --if-exists < db-AAAA-MM-DD.dump`
